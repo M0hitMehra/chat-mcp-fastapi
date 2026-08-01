@@ -6,6 +6,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents.middleware import SummarizationMiddleware
 
 from schemas import MCPServer
+from response_schemas import SYSTEM_PROMPT
 import os
 
 
@@ -84,6 +85,7 @@ async def create_chat_agent(
                 keep=("messages", 10),
             )
         ],
-     )
+        system_prompt=SYSTEM_PROMPT,
+    )
 
     return agent
