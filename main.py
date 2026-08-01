@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 import json
 from fastapi.middleware.cors import CORSMiddleware
+# from backend import agent
 from schemas import (
     ConnectRequest,
     ConnectResponse,
@@ -24,6 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 async def health():
 
@@ -40,26 +42,28 @@ async def health():
 async def connect(body: ConnectRequest):
 
     try:
-
+        print(
+            f"Connecting to MCP with API Key: {body.api_key}, Model: {body.model}, Thread ID: {body.thread_id}, MCP Servers: {body.mcp_servers}"
+        )
         agent = await create_chat_agent(
             api_key=body.api_key,
             model_name=body.model,
             mcp_servers=body.mcp_servers,
         )
-
+        print(f"Agent created: {agent}")
         config = {"configurable": {"thread_id": body.thread_id}}
 
         session_id = session_manager.create(
             agent=agent,
             config=config,
         )
-
+        print(f"Session created with ID: {session_id}")
         return ConnectResponse(
             session_id=session_id,
         )
 
     except Exception as e:
-
+        print(e)
         raise HTTPException(
             status_code=500,
             detail=str(e),
