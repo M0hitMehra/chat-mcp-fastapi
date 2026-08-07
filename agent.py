@@ -2,12 +2,25 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 
-from langgraph.checkpoint.memory import InMemorySaver
-from langchain.agents.middleware import SummarizationMiddleware
+from langgraph.checkpoint.memory import InMemorySaver 
+from langchain.agents.middleware import SummarizationMiddleware 
 
 from schemas import MCPServer
 from response_schemas import SYSTEM_PROMPT
 import os
+
+
+from typing import TypedDict, Annotated
+from langgraph.graph.message import add_messages
+
+
+class State(TypedDict):
+
+    messages: Annotated[list, add_messages]
+
+    needs_human: bool
+
+    verification_reason: str
 
 
 async def create_chat_agent(
@@ -15,64 +28,25 @@ async def create_chat_agent(
     model_name: str,
     mcp_servers: list[MCPServer],
 ):
-    """
-    Creates a LangChain Agent dynamically.
-
-    Parameters
-    ----------
-    api_key : Gemini API Key
-
-    model_name : Gemini model
-
-    mcp_servers : List of MCP servers
-
-    Returns
-    -------
-    LangChain Agent
-    """
-
-    # ---------------------------------
-    # Gemini API Key
-    # ---------------------------------
-
+   
     os.environ["GOOGLE_API_KEY"] = api_key
-
-    # ---------------------------------
-    # Convert MCP Servers
-    # ---------------------------------
-
     servers = {}
-
+    print("mcp_servers_mcp_servers",mcp_servers)
     for server in mcp_servers:
-
-        servers[server.name] = {
+        if not  server["url"] :
+            continue
+        servers[server["name"]] = {
             "transport": "streamable-http",
-            "url": server.url,
+            "url": server["url"],
         }
-
-    # ---------------------------------
-    # Create MCP Client
-    # ---------------------------------
 
     client = MultiServerMCPClient(servers)
 
-    # ---------------------------------
-    # Fetch Tools
-    # ---------------------------------
-
     tools = await client.get_tools()
-
-    # ---------------------------------
-    # Gemini Model
-    # ---------------------------------
 
     model = ChatGoogleGenerativeAI(
         model=model_name,
     )
-
-    # ---------------------------------
-    # Agent
-    # ---------------------------------
 
     agent = create_agent(
         model,
