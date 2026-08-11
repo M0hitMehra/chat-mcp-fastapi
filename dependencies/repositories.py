@@ -2,6 +2,7 @@ from repositories.user_repository import UserRepository
 from repositories.thread_repositories import ThreadRepository
 from repositories.message_repository import MessageRepository
 from repositories.session_repository import SessionRepository
+from repositories.summary_repository import SummaryRepository
 
 
 def fetch_user_repository():
@@ -16,3 +17,6 @@ def fetch_message_repository():
 
 def fetch_session_repository():
     return SessionRepository()
+
+def fetch_summary_repository():
+    return SummaryRepository()

@@ -24,8 +24,16 @@ from repositories.session_repository import SessionRepository
 from dependencies.repositories import fetch_thread_repository
 from repositories.thread_repositories import ThreadRepository
 from repositories.message_repository import MessageRepository
-from dependencies.repositories import fetch_message_repository
+from dependencies.repositories import fetch_message_repository,fetch_summary_repository
+from dependencies.services import (
+    fetch_chat_history_service,
+    ChatHistoryService,
+    SummaryService,
+    fetch_summary_service,
+    create_summary_service,
+)
 import uuid
+from repositories.summary_repository import SummaryRepository
 
 from bson import ObjectId
 import os
@@ -77,27 +85,14 @@ async def connect(
 
 
 async def stream_response(
-    agent,
-    config,
-    message,
-    user_id,
-    thread_id,
-    session_id,
-    message_repository,
+    agent, config, message, user_id, thread_id, session_id, message_repository, history
 ):
     assistant_content = ""
 
     try:
         async for chunk, _ in agent.astream(
-            {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": message,
-                    }
-                ]
-            },
-            config=config,
+            {"messages": history},
+            config,
             stream_mode="messages",
         ):
             content = chunk.content
@@ -164,10 +159,18 @@ async def chat(
     message_repository: MessageRepository = Depends(fetch_message_repository),
     session_manager: SessionRepository = Depends(fetch_session_repository),
     thread_repository: ThreadRepository = Depends(fetch_thread_repository),
+    historyService: ChatHistoryService = Depends(fetch_chat_history_service),
+    summary_repository: SummaryRepository = Depends(fetch_summary_repository),
 ):
 
     thread = await thread_repository.find_by_user_id_and_thread_id(
         thread_id=body.thread_id, user_id=user_id
+    )
+
+    summar_service = create_summary_service(
+        api_key=thread["api_key"],
+        message_repository=message_repository,
+        summary_repository=summary_repository,
     )
 
     session_id = thread["session_id"]
@@ -189,11 +192,15 @@ async def chat(
         {
             "user_id": ObjectId(user_id),
             "thread_id": thread_id,
-            "session_id":  body.session_id,
+            "session_id": body.session_id,
             "role": "user",
             "content": body.message,
             "created_at": datetime.datetime.now(datetime.timezone.utc),
         }
+    )
+
+    history = await historyService.build_history(
+        thread_id=thread_id, user_id=user_id, summar_service=summar_service
     )
 
     # build agent or reuse agent
@@ -201,11 +208,12 @@ async def chat(
     agent = await create_chat_agent(
         model_name=thread["model_name"] or "gemini-3.1-flash-lite",
         api_key=thread["api_key"],
-        mcp_servers=thread["mcp_servers"] or []
+        mcp_servers=thread["mcp_servers"] or [],
     )
 
     config = {"configurable": {"thread_id": thread_id}}
-
+    print("history+history",history)
+    # raise Exception
     return StreamingResponse(
         stream_response(
             agent=agent,
@@ -215,6 +223,7 @@ async def chat(
             thread_id=thread_id,
             session_id=body.session_id,
             message_repository=message_repository,
+            history=history,
         ),
         media_type="text/event-stream",
     )
