@@ -1,8 +1,7 @@
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_xai import ChatXAI
-from langchain_openai import ChatOpenAI
+ 
 
 from langchain.agents import create_agent
 
@@ -52,18 +51,23 @@ async def create_chat_agent(
     client = MultiServerMCPClient(servers)
 
     tools = await client.get_tools()
+    
+    os.environ["GOOGLE_API_KEY"] = api_key
+    model = ChatGoogleGenerativeAI(
+                model=model_name,
+            )
 
-    if llm_name.lower() == "gemini":
-        os.environ["GOOGLE_API_KEY"] = api_key
-        model = ChatGoogleGenerativeAI(
-            model=model_name,
-        )
-    elif llm_name.lower() == "groq":
-        os.environ["GROQ_API_KEY"] = api_key
-        model = ChatXAI(model="grok-3-mini" )
-    elif llm_name.lower() == "openai":
-        os.environ["OPENAI_API_KEY"] = api_key
-        model = ChatOpenAI(model="gpt-5" )
+    # if llm_name.lower() == "gemini":
+    #     os.environ["GOOGLE_API_KEY"] = api_key
+    #     model = ChatGoogleGenerativeAI(
+    #         model=model_name,
+    #     )
+    # elif llm_name.lower() == "groq":
+    #     os.environ["GROQ_API_KEY"] = api_key
+    #     model = ChatXAI(model="grok-3-mini" )
+    # elif llm_name.lower() == "openai":
+    #     os.environ["OPENAI_API_KEY"] = api_key
+    #     model = ChatOpenAI(model="gpt-5" )
 
     agent = create_agent(
         model,
