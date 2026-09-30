@@ -39,6 +39,7 @@ from bson import ObjectId
 from routes.auth_routes import auth_router
 from routes.thread_routes import thread_router
 from routes.session_routes import session_router
+from routes.admin_routes import admin_router
 
 app = FastAPI(
     title="MCP Chat Backend",
@@ -59,6 +60,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/auth")
 app.include_router(thread_router, prefix="/threads")
 app.include_router(session_router, prefix="/sessions")
+app.include_router(admin_router, prefix="/admin")
 
 
 @app.get("/health", dependencies=[Depends(authenticate_user)])
@@ -213,6 +215,7 @@ async def chat(
         model_name=thread["model_name"] or "gemini-3.1-flash-lite",
         api_key=thread["api_key"],
         mcp_servers=thread["mcp_servers"] or [],
+        llm_name="gemini"
     )
 
     config = {"configurable": {"thread_id": thread_id}}

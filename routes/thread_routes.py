@@ -27,6 +27,8 @@ thread_router = APIRouter()
 @thread_router.get("/{thread_id}/messages")
 async def get_thread_messages(
     thread_id: str,
+    limit: int =30,
+    skip: int=0,
     user_id: str = Depends(authenticate_user),
     thread_repository: ThreadRepository = Depends(fetch_thread_repository),
     message_repository: MessageRepository = Depends(fetch_message_repository),
@@ -46,6 +48,8 @@ async def get_thread_messages(
     messages = await message_repository.find_by_thread_id(
         thread_id=thread_id,
         user_id=user_id,
+        limit=limit,
+        skip=skip,
     )
 
     return {
@@ -164,7 +168,6 @@ async def update_thread_config(
         )
 
     update_data["updated_at"] = datetime.datetime.now(datetime.timezone.utc)
-    
 
     result = await thread_repository.update_config(
         user_id=user_id,

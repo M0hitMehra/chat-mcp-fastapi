@@ -7,6 +7,7 @@ from fastapi import Depends
 from repositories.session_repository import SessionRepository
 from services.chat_history_service import ChatHistoryService
 from services.summary_service import SummaryService
+from services.user_service import UserService
 from dependencies.repositories import fetch_message_repository, fetch_summary_repository
 from summary_agent import SummaryAgent
 
@@ -49,3 +50,8 @@ def create_summary_service(
         message_repository=message_repository,
         summary_agent=summary_agent,
     )
+
+
+
+def fetch_user_service(user_repo: UserRepository = Depends(fetch_user_repository)):
+    return UserService(user_repo)

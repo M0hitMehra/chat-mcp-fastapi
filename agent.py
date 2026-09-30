@@ -1,9 +1,13 @@
 from langchain_mcp_adapters.client import MultiServerMCPClient
+
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_xai import ChatXAI
+from langchain_openai import ChatOpenAI
+
 from langchain.agents import create_agent
 
-from langgraph.checkpoint.memory import InMemorySaver 
-from langchain.agents.middleware import SummarizationMiddleware 
+from langgraph.checkpoint.memory import InMemorySaver
+from langchain.agents.middleware import SummarizationMiddleware
 
 from schemas import MCPServer
 from response_schemas import SYSTEM_PROMPT
@@ -24,16 +28,13 @@ class State(TypedDict):
 
 
 async def create_chat_agent(
-    api_key: str,
-    model_name: str,
-    mcp_servers: list[MCPServer],
+    api_key: str, model_name: str, mcp_servers: list[MCPServer], llm_name: str
 ):
-   
-    os.environ["GOOGLE_API_KEY"] = api_key
+
     servers = {}
-    print("mcp_servers_mcp_servers",mcp_servers)
+    print("mcp_servers_mcp_servers", mcp_servers)
     for server in mcp_servers:
-        if not  server["url"] :
+        if not server["url"]:
             continue
         servers[server["name"]] = {
             "transport": "streamable-http",
@@ -44,21 +45,21 @@ async def create_chat_agent(
 
     tools = await client.get_tools()
 
-    model = ChatGoogleGenerativeAI(
-        model=model_name,
-    )
+    if llm_name.lower() == "gemini":
+        os.environ["GOOGLE_API_KEY"] = api_key
+        model = ChatGoogleGenerativeAI(
+            model=model_name,
+        )
+    elif llm_name.lower() == "groq":
+        os.environ["GROQ_API_KEY"] = api_key
+        model = ChatXAI(model="grok-3-mini" )
+    elif llm_name.lower() == "openai":
+        os.environ["OPENAI_API_KEY"] = api_key
+        model = ChatOpenAI(model="gpt-5" )
 
     agent = create_agent(
         model,
         tools,
-        # checkpointer=InMemorySaver(),
-        # middleware=[
-        #     SummarizationMiddleware(
-        #         model=f"google_genai:{model_name}",
-        #         trigger=("messages", 50),
-        #         keep=("messages", 10),
-        #     )
-        # ],
         system_prompt=SYSTEM_PROMPT,
     )
 

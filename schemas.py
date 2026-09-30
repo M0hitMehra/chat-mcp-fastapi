@@ -37,8 +37,8 @@ class UserRegisterRequest(BaseModel):
 
 
 class UserLoginRequest(BaseModel):
-    email: str
-    password: str
+    email: str ="string@string.com"
+    password: str ="string"
 
 
 class CreateThreadRequest(BaseModel):

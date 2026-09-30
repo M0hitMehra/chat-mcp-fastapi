@@ -30,3 +30,15 @@ class UserRepository:
     async def delete(self, user_id: str):
 
         return await self.collection.delete_one({"_id": ObjectId(user_id)})
+
+    async def find_all_users(self, sort: str, limit: int = 10, skip: int = 0):
+        users = (
+            self.collection.find()
+            .sort("creadtedAt", (-1 if sort == "desc" else 1))
+            .limit(limit)
+            .skip(skip)
+        )
+
+        return await users.to_list(length=None)
+    
+    
