@@ -13,6 +13,7 @@ class MCPServer(BaseModel):
     name: str
     url: str
     auth:MCPCred|None =None
+    token:str|None= None
 
 
 class ConnectRequest(BaseModel):
