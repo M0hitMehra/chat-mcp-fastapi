@@ -2,9 +2,17 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 
+class MCPCred(BaseModel):
+    username:str|None=None
+    password:str|None=None
+    apiKey:str|None=None
+    token:str|None=None
+    
+
 class MCPServer(BaseModel):
     name: str
     url: str
+    auth:MCPCred|None =None
 
 
 class ConnectRequest(BaseModel):

@@ -44,6 +44,7 @@ from routes.admin_routes import admin_router
 app = FastAPI(
     title="MCP Chat Backend",
     version="1.0.0",
+    
 )
 
 app.add_exception_handler(AppError, app_error_handler)
