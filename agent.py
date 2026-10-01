@@ -37,15 +37,17 @@ async def create_chat_agent(
             continue
 
         config = {
-            "transport": "streamable-http",
+            "transport": "streamable_http",
             "url": server["url"],
         }
 
-        if server.get("auth") and server["auth"].get("token"):
+        if server.get("token") :
             config["headers"] = {
-                "Authorization": f"Bearer {server['auth']['token']}"
+                "Authorization": f"Bearer {server['token']}"
             }
-
+        print("config+config")
+        print(config)
+        print(mcp_servers)
         servers[server["name"]] = config
 
     client = MultiServerMCPClient(servers)
