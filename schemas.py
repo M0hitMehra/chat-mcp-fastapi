@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
@@ -31,7 +31,23 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     thread_id: str
+    
+class CompanySelection(BaseModel):
+    companyName: str = Field(
+        ...,
+        min_length=2,
+        max_length=150,
+        description="Name of the Indian company to look up",
+    )
+    apiKey: str = Field(..., min_length=10, description="API key for the LLM provider")
 
+
+class CompanyCINResponse(BaseModel):
+    companyName: str = Field(..., description="Company name as provided by the user")
+    cin: str | None = Field(
+        None,
+        description="CIN or LLPIN returned by the tool. Null if the tool found no match.",
+    )
 
 class User(BaseModel):
     username: str
@@ -55,6 +71,26 @@ class CreateThreadRequest(BaseModel):
     model_name: str = "gemini-3.1-flash-lite"
     apiKey: str
     mcp_servers: list[MCPServer]
+    
+    
+class CreatePitchThreadRequest(BaseModel):
+        session_id: str
+        model_name: str = "gemini-3.1-flash-lite"
+        apiKey: str
+        mcp_servers: list[MCPServer]
+        thread_type: str|None="PITCH"
+        pitch_info:PitchInfo|None= None
+        
+        
+class PitchInfo(BaseModel):
+        pitch_type:str|None="COMPANY"
+        cin:str
+        contact:str|None = None
+        email:str|None = None
+        phone:str|None = None
+        pitch_description:str|None = None
+        companyName:str|None=None
+
 
 
 class UpdateThreadConfigRequest(BaseModel):

@@ -40,6 +40,7 @@ from routes.auth_routes import auth_router
 from routes.thread_routes import thread_router
 from routes.session_routes import session_router
 from routes.admin_routes import admin_router
+from routes.pitch_thread_routes import pitch_thread_router
 
 app = FastAPI(
     title="MCP Chat Backend",
@@ -62,6 +63,7 @@ app.include_router(auth_router, prefix="/auth")
 app.include_router(thread_router, prefix="/threads")
 app.include_router(session_router, prefix="/sessions")
 app.include_router(admin_router, prefix="/admin")
+app.include_router(pitch_thread_router, prefix="/pitch")
 
 
 @app.get("/health", dependencies=[Depends(authenticate_user)])
@@ -70,29 +72,29 @@ async def health():
     return {"status": "ok", "message": "Backend Running"}
 
 
-@app.post("/connect", response_model=ConnectResponse)
-async def connect(
-    user_id: str = Depends(authenticate_user),
-    session_repository: SessionRepository = Depends(fetch_session_repository),
-):
+# @app.post("/connect", response_model=ConnectResponse)
+# async def connect(
+#     user_id: str = Depends(authenticate_user),
+#     session_repository: SessionRepository = Depends(fetch_session_repository),
+# ):
 
-    session_id = str(uuid.uuid4())
+#     session_id = str(uuid.uuid4())
 
-    session_document = {
-        "session_id": session_id,
-        "user_id": ObjectId(user_id),
-        # "mcp_servers": [server.model_dump() for server in body.mcp_servers],
-        "created_at": datetime.datetime.now(datetime.timezone.utc),
-        "updated_at": datetime.datetime.now(datetime.timezone.utc),
-    }
+#     session_document = {
+#         "session_id": session_id,
+#         "user_id": ObjectId(user_id),
+#         # "mcp_servers": [server.model_dump() for server in body.mcp_servers],
+#         "created_at": datetime.datetime.now(datetime.timezone.utc),
+#         "updated_at": datetime.datetime.now(datetime.timezone.utc),
+#     }
 
-    await session_repository.create(session_document)
+#     await session_repository.create(session_document)
 
-    return {"session_id": session_id}
+#     return {"session_id": session_id}
 
 
 async def stream_response(
-    agent, config, message, user_id, thread_id, session_id, message_repository, history
+    agent, config, message, user_id, thread_id , message_repository, history
 ):
     assistant_content = ""
 
@@ -139,7 +141,7 @@ async def stream_response(
                 {
                     "user_id": ObjectId(user_id),
                     "thread_id": thread_id,
-                    "session_id": session_id,
+                    # "session_id": session_id,
                     "role": "assistant",
                     "content": assistant_content,
                     "created_at": datetime.datetime.now(datetime.timezone.utc),
@@ -164,7 +166,7 @@ async def chat(
     body: ChatRequest,
     user_id: str = Depends(authenticate_user),
     message_repository: MessageRepository = Depends(fetch_message_repository),
-    session_manager: SessionRepository = Depends(fetch_session_repository),
+    # session_manager: SessionRepository = Depends(fetch_session_repository),
     thread_repository: ThreadRepository = Depends(fetch_thread_repository),
     historyService: ChatHistoryService = Depends(fetch_chat_history_service),
     summary_repository: SummaryRepository = Depends(fetch_summary_repository),
@@ -180,17 +182,17 @@ async def chat(
         summary_repository=summary_repository,
     )
 
-    session_id = thread["session_id"]
-    session = await session_manager.find_user_session(
-        session_id=session_id, user_id=user_id
-    )
+    # session_id = thread["session_id"]
+    # session = await session_manager.find_user_session(
+    #     session_id=session_id, user_id=user_id
+    # )
 
-    if not session:
-        raise AppError(
-            "Session not found",
-            404,
-            "INVALID_SESSION",
-        )
+    # if not session:
+    #     raise AppError(
+    #         "Session not found",
+    #         404,
+    #         "INVALID_SESSION",
+    #     )
 
     thread_id = body.thread_id
 
@@ -199,7 +201,7 @@ async def chat(
         {
             "user_id": ObjectId(user_id),
             "thread_id": thread_id,
-            "session_id": body.session_id,
+            # "session_id": body.session_id,
             "role": "user",
             "content": body.message,
             "created_at": datetime.datetime.now(datetime.timezone.utc),
@@ -229,7 +231,7 @@ async def chat(
             message=body.message,
             user_id=user_id,
             thread_id=thread_id,
-            session_id=body.session_id,
+            # session_id=body.session_id,
             message_repository=message_repository,
             history=history,
         ),
