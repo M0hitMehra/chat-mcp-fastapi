@@ -39,6 +39,22 @@ class ThreadRepository:
         ).sort("updated_at", -1)
 
         return await cursor.to_list(length=100)
+    
+    
+    async def find_latest_thread_by_user_id(
+                self,
+                user_id: str,
+            ):
+                cursor = self.collection.find(
+                    {
+                        "user_id": ObjectId(user_id),
+                    }
+                ).sort("updated_at", -1).limit(1)
+                
+                print(cursor)
+                return await cursor.to_list[0];
+
+                
 
     async def find_by_user_id_and_thread_id(self, user_id: str, thread_id: str):
         cursor = self.collection.find_one(

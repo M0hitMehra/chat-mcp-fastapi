@@ -1,5 +1,6 @@
 from repositories.user_repository import UserRepository
 from repositories.thread_repositories import ThreadRepository
+from repositories.pitch_thread_respository import PitchThreadRepository
 from repositories.message_repository import MessageRepository
 from repositories.session_repository import SessionRepository
 from repositories.summary_repository import SummaryRepository
@@ -11,6 +12,9 @@ def fetch_user_repository():
 
 def fetch_thread_repository():
     return ThreadRepository()
+
+def fetch_pitch_thread_repository():
+    return PitchThreadRepository()
 
 def fetch_message_repository():
     return MessageRepository()

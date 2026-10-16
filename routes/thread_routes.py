@@ -129,6 +129,48 @@ async def create_thread(
     }
 
 
+
+@thread_router.post("/")
+async def create_pitch_thread(
+    body: CreateThreadRequest,
+    user_id: str = Depends(authenticate_user),
+    session_repository: SessionRepository = Depends(fetch_session_repository),
+    thread_repository: ThreadRepository = Depends(fetch_thread_repository),
+):
+    session = await session_repository.find_user_session(
+        session_id=body.session_id,
+        user_id=user_id,
+    )
+
+    if not session:
+        raise AppError(
+            "Session not found",
+            404,
+            "SESSION_NOT_FOUND",
+        )
+
+    thread_id = str(uuid.uuid4())
+
+    await thread_repository.create(
+        {
+            "thread_id": thread_id,
+            "thread_name": "New Chat",
+            "session_id": body.session_id,
+            "user_id": ObjectId(user_id),
+            "model_name": body.model_name,
+            "api_key": body.apiKey,
+            "mcp_servers": [server.model_dump() for server in body.mcp_servers],
+            "created_at": datetime.datetime.now(datetime.timezone.utc),
+            "updated_at": datetime.datetime.now(datetime.timezone.utc),
+        }
+    )
+
+    return {
+        "thread_id": thread_id,
+        "thread_name": "New Chat",
+    }
+
+
 @thread_router.patch("/{thread_id}/config")
 async def update_thread_config(
     thread_id: str,
