@@ -7,6 +7,9 @@ import datetime
 from schemas import (
     CreatePitchThreadRequest,
     UpdateThreadConfigRequest,
+    CompanySearchResponse,
+    CompanySearchResult
+    
      
 )
 from utils.errorHandler.error_handler import AppError
@@ -448,57 +451,31 @@ async def stream_response_for_companySelection(
         yield "data: [DONE]\n\n"
 
 
-import httpx
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
+
 
 
 import httpx
 
-CORPVUE_URL = "https://www.corpvue.com/gateway/cometsearch/open/searchcompanyorllp"
+CORPVUE_SEARCH_URL = (
+    "https://www.corpvue.com/gateway/cometsearch/open/searchcompanyorllp"
+)
 
-
-async def search_corpvue(company_name: str, timeout: float = 10.0) -> list[dict]:
-    params = {"query": company_name}
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.get(CORPVUE_URL, params=params)
-        resp.raise_for_status()
-        return resp.json()
-    
-  
-
-@pitch_thread_router.post("/company-search")
-async def get_company_cin(
-    body: CompanySelection,
-    user_id: str = Depends(authenticate_user),
-):
-    company_name = body.companyName.strip()
-    if not company_name:
-        raise AppError("companyName is required", 400, "INVALID_QUERY")
-
-    try:
-        raw = await search_corpvue(company_name)
-    except httpx.HTTPStatusError as e:
-        raise AppError(
-            f"CorpVue returned {e.response.status_code}",
-            502,
-            "UPSTREAM_ERROR",
+async def search_corpvue(company_name: str) -> list[dict]:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(
+            CORPVUE_SEARCH_URL,
+            params={"query": company_name},
+            headers={
+                "Accept": "application/json, text/plain, */*",
+                "Origin": "https://corpvue.com",
+                "Referer": "https://corpvue.com/",
+            },
         )
-    except httpx.RequestError as e:
-        raise AppError(f"CorpVue unreachable: {e}", 502, "UPSTREAM_UNREACHABLE")
 
-    results = [
-        CompanySearchResult(
-            companyName=item.get("name", "").strip(),
-            cin=item.get("id", "").strip(),
-            type=item.get("type", "COMPANY"),
-            status=item.get("status"),
-            rocCode=item.get("rocCode"),
-            prevCompanyName=item.get("prevCompanyName"),
-        )
-        for item in (raw or [])
-        if item.get("id") and item.get("name")   # drop malformed entries
-    ]
+        response.raise_for_status()
+        data = response.json()
 
-    payload = CompanySearchResponse(query=company_name, results=results).model_dump()
-    return JSONResponse(content=payload)
+        if not isinstance(data, list):
+            raise ValueError("Unexpected response from CorpVue")
+
+        return data
