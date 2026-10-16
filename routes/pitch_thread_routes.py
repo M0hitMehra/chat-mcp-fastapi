@@ -322,7 +322,7 @@ async def chat(
         thread_id=body.thread_id, user_id=user_id
     )
 
-    if(thread.cin is None) :
+    if(thread["cin"] is None) :
          raise AppError(
                     "cin not found",
                     404,
