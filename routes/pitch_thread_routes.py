@@ -460,6 +460,7 @@ CORPVUE_SEARCH_URL = (
     "https://www.corpvue.com/gateway/cometsearch/open/searchcompanyorllp"
 )
 
+@pitch_thread_router.post("/company-search")
 async def search_corpvue(company_name: str) -> list[dict]:
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(
