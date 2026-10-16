@@ -321,6 +321,16 @@ async def chat(
     thread = await thread_repository.find_by_user_id_and_thread_id(
         thread_id=body.thread_id, user_id=user_id
     )
+    print("--------------------------")
+    print(user_id)
+    print(body)
+    
+    if(thread is None):
+        raise AppError(
+            "Thread does not exist for user",
+            404,
+            "INVALID_THREAD"
+        )
 
     if(thread["cin"] is None) :
          raise AppError(
