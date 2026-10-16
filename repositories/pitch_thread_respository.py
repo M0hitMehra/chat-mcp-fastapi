@@ -2,6 +2,19 @@ from core.database import db
 from bson import ObjectId
 from models.PitchThread import PithcThread
 
+
+def _to_json_safe(doc):
+    if doc is None:
+        return None
+    if isinstance(doc, dict):
+        return {
+            k: (str(v) if isinstance(v, ObjectId) else _to_json_safe(v))
+            for k, v in doc.items()
+        }
+    if isinstance(doc, list):
+        return [_to_json_safe(d) for d in doc]
+    return doc
+
 class PitchThreadRepository:
 
     def __init__(self):
@@ -51,7 +64,7 @@ class PitchThreadRepository:
                         }
                         ).sort("updated_at", -1)
             data = await cursor.to_list(length=1)
-            return data[0] if data else None  ;
+            return _to_json_safe(data[0]) if data else None  ;
             
             
             
