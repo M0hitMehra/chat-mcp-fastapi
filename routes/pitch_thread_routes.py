@@ -13,8 +13,6 @@ from utils.errorHandler.error_handler import AppError
 
 from fastapi import Depends
 from middlewares.authenticate_user import authenticate_user
-from dependencies.repositories import fetch_session_repository
-from repositories.session_repository import SessionRepository
 from dependencies.repositories import fetch_pitch_thread_repository
 from repositories.pitch_thread_respository import PitchThreadRepository
 from repositories.message_repository import MessageRepository
@@ -46,9 +44,6 @@ from utils.errorHandler.error_handler import AppError
 from agent import create_chat_agent_for_pitch , create_company_selector_agent
 from fastapi import Depends
 from middlewares.authenticate_user import authenticate_user
-from dependencies.repositories import fetch_session_repository
-from repositories.session_repository import SessionRepository
-from dependencies.repositories import fetch_thread_repository
 from repositories.thread_repositories import ThreadRepository
 from repositories.message_repository import MessageRepository
 from dependencies.repositories import fetch_message_repository, fetch_summary_repository
@@ -313,7 +308,7 @@ async def chat(
     body: ChatRequest,
     user_id: str = Depends(authenticate_user),
     message_repository: MessageRepository = Depends(fetch_message_repository),
-    thread_repository: ThreadRepository = Depends(fetch_thread_repository),
+    thread_repository: ThreadRepository = Depends(fetch_pitch_thread_repository),
     historyService: ChatHistoryService = Depends(fetch_chat_history_service),
     summary_repository: SummaryRepository = Depends(fetch_summary_repository),
 ):
@@ -324,6 +319,7 @@ async def chat(
     print("--------------------------")
     print(user_id)
     print(body)
+    print(thread)
     
     if(thread is None):
         raise AppError(
