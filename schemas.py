@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional,Literal
 
 
 class MCPCred(BaseModel):
@@ -32,22 +32,19 @@ class ChatRequest(BaseModel):
     message: str
     thread_id: str
     
-class CompanySelection(BaseModel):
-    companyName: str = Field(
-        ...,
-        min_length=2,
-        max_length=150,
-        description="Name of the Indian company to look up",
-    )
-    apiKey: str = Field(..., min_length=10, description="API key for the LLM provider")
+
+class CompanySearchResult(BaseModel):
+    companyName: str = Field(..., description="Company / LLP name")
+    cin: str = Field(..., description="CIN for companies, LLPIN for LLPs")
+    type: Literal["COMPANY", "LLP"] | str =None
+    status: Optional[str] = None
+    rocCode: Optional[str] = None
+    prevCompanyName: Optional[str] = None
 
 
-class CompanyCINResponse(BaseModel):
-    companyName: str = Field(..., description="Company name as provided by the user")
-    cin: str | None = Field(
-        None,
-        description="CIN or LLPIN returned by the tool. Null if the tool found no match.",
-    )
+class CompanySearchResponse(BaseModel):
+    query: str
+    results: list[CompanySearchResult]
 
 class User(BaseModel):
     username: str

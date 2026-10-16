@@ -7,7 +7,7 @@ import datetime
 from schemas import (
     CreatePitchThreadRequest,
     UpdateThreadConfigRequest,
-    CompanySelection
+     
 )
 from utils.errorHandler.error_handler import AppError
 
@@ -448,54 +448,57 @@ async def stream_response_for_companySelection(
         yield "data: [DONE]\n\n"
 
 
+import httpx
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+
+
+import httpx
+
+CORPVUE_URL = "https://www.corpvue.com/gateway/cometsearch/open/searchcompanyorllp"
+
+
+async def search_corpvue(company_name: str, timeout: float = 10.0) -> list[dict]:
+    params = {"query": company_name}
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.get(CORPVUE_URL, params=params)
+        resp.raise_for_status()
+        return resp.json()
+    
+  
+
 @pitch_thread_router.post("/company-search")
 async def get_company_cin(
     body: CompanySelection,
     user_id: str = Depends(authenticate_user),
 ):
-    mcp_servers = [
-        {
-            "name": "Company Details MCP",
-            "url": "https://mcp-server-company-details.onrender.com/mcp",
-        }
-    ]
-
-    agent = await create_company_selector_agent(
-        model_name="gemini-3.1-flash-lite",
-        api_key=body.apiKey,
-        mcp_servers=mcp_servers,
-        llm_name="gemini",
-    )
-
-    # A fresh thread per request — this endpoint is stateless.
-    config = {
-        "configurable": {
-            "thread_id": f"cin-lookup-{user_id}-{int(time.time() * 1000)}"
-        }
-    }
+    company_name = body.companyName.strip()
+    if not company_name:
+        raise AppError("companyName is required", 400, "INVALID_QUERY")
 
     try:
-        result = await agent.ainvoke(
-            {"messages": [HumanMessage(content=body.companyName)]},
-            config,
-        )
-    except Exception as e:
+        raw = await search_corpvue(company_name)
+    except httpx.HTTPStatusError as e:
         raise AppError(
-                    e,
-                    404,
-                    "SESSION_NOT_FOUND",
-                )
-        
-    # When using response_format=CompanyCINResponse, the structured payload
-    # lives under a known key. In current langchain agents it's `structured_response`.
-    structured = result.get("structured_response") or result.get("response")
-    if structured is None:
-          raise AppError(
-                        e,
-                        500,
-                        "Agent returned no structured response",
-                    )
+            f"CorpVue returned {e.response.status_code}",
+            502,
+            "UPSTREAM_ERROR",
+        )
+    except httpx.RequestError as e:
+        raise AppError(f"CorpVue unreachable: {e}", 502, "UPSTREAM_UNREACHABLE")
 
-    # Pydantic model -> JSON-safe dict
-    payload = structured if isinstance(structured, dict) else structured.model_dump()
+    results = [
+        CompanySearchResult(
+            companyName=item.get("name", "").strip(),
+            cin=item.get("id", "").strip(),
+            type=item.get("type", "COMPANY"),
+            status=item.get("status"),
+            rocCode=item.get("rocCode"),
+            prevCompanyName=item.get("prevCompanyName"),
+        )
+        for item in (raw or [])
+        if item.get("id") and item.get("name")   # drop malformed entries
+    ]
+
+    payload = CompanySearchResponse(query=company_name, results=results).model_dump()
     return JSONResponse(content=payload)

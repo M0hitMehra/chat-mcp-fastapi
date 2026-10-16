@@ -8,7 +8,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents.middleware import SummarizationMiddleware
 
-from schemas import MCPServer ,CompanyCINResponse
+from schemas import MCPServer ,CompanySearchResponse
 from response_schemas import SYSTEM_PROMPT ,COMPANY_SELECT_SYSTEM_PROMPT,SYSTEM_PROMPT_FOR_PITCH
 import os
 
@@ -191,7 +191,7 @@ async def create_company_selector_agent(
         model,
         tools,
         system_prompt=COMPANY_SELECT_SYSTEM_PROMPT,
-         response_format=CompanyCINResponse
+         response_format=CompanySearchResponse
     )
 
     return agent
