@@ -137,20 +137,9 @@ async def get_threads(
 async def create_thread(
     body: CreatePitchThreadRequest,
     user_id: str = Depends(authenticate_user),
-    session_repository: SessionRepository = Depends(fetch_session_repository),
     thread_repository: PitchThreadRepository = Depends(fetch_pitch_thread_repository),
 ):
-    session = await session_repository.find_user_session(
-        session_id=body.session_id,
-        user_id=user_id,
-    )
-
-    if not session:
-        raise AppError(
-            "Session not found",
-            404,
-            "SESSION_NOT_FOUND",
-        )
+     
 
     thread_id = str(uuid.uuid4())
 
