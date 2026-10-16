@@ -365,7 +365,7 @@ async def chat(
         mcp_servers=thread["mcp_servers"] or [],
         llm_name="gemini",
         
-         company_name=thread["company_name"],   # ← add these
+         company_name=thread["companyName"],   # ← add these
     cin=thread["cin"],
     )
 
