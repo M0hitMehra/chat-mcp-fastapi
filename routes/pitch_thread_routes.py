@@ -453,29 +453,35 @@ async def stream_response_for_companySelection(
 
 
 
-
+import certifi
 import httpx
+from fastapi import Query
+import truststore
+
+truststore.inject_into_ssl()
 
 CORPVUE_SEARCH_URL = (
     "https://www.corpvue.com/gateway/cometsearch/open/searchcompanyorllp"
 )
 
 @pitch_thread_router.post("/company-search")
-async def search_corpvue(company_name: str) -> list[dict]:
-    async with httpx.AsyncClient(timeout=30.0) as client:
+async def search_corpvue(company_name: str = Query(..., min_length=1)) -> list[dict]:
+    async with httpx.AsyncClient(
+        timeout=30.0,
+        verify=certifi.where(),
+    ) as client:
         response = await client.get(
             CORPVUE_SEARCH_URL,
-            params={"query": company_name},
+            params={"query": company_name.strip()},
             headers={
                 "Accept": "application/json, text/plain, */*",
                 "Origin": "https://corpvue.com",
                 "Referer": "https://corpvue.com/",
             },
         )
-
         response.raise_for_status()
-        data = response.json()
 
+        data = response.json()
         if not isinstance(data, list):
             raise ValueError("Unexpected response from CorpVue")
 
