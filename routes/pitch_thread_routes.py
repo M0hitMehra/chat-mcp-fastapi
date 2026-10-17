@@ -458,7 +458,7 @@ import httpx
 from fastapi import Query
 import truststore
 
-truststore.inject_into_ssl()
+# truststore.inject_into_ssl()
 
 CORPVUE_SEARCH_URL = (
     "https://www.corpvue.com/gateway/cometsearch/open/searchcompanyorllp"
@@ -486,3 +486,28 @@ async def search_corpvue(company_name: str = Query(..., min_length=1)) -> list[d
             raise ValueError("Unexpected response from CorpVue")
 
         return data
+    
+    
+    
+import ssl
+ 
+
+@pitch_thread_router.get("/debug/corpvue-ssl")
+async def debug_corpvue_ssl():
+    result = {
+        "openssl": ssl.OPENSSL_VERSION,
+        "certifi_path": certifi.where(),
+        "default_verify_paths": str(ssl.get_default_verify_paths()),
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=15.0,
+            verify=certifi.where(),
+        ) as client:
+            response = await client.get("https://www.corpvue.com/")
+            result["http_status"] = response.status_code
+    except Exception as exc:
+        result["request_error"] = f"{type(exc).__name__}: {exc}"
+
+    return result
